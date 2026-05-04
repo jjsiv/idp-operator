@@ -1,0 +1,30 @@
+apiVersion: idp.autopay.io/v1alpha1
+kind: Resource
+metadata:
+  name: test-topic
+  namespace: payments
+spec:
+  displayName: Test_Topic
+  description: Test_Topic is used for testing Kafka topics
+  tenantRef:
+    name: payments
+  templateRef:
+    name: kafka-topic
+    parameters:
+      - name: tenant
+        value: payments
+      - name: name
+        value: Test_Topic
+      - name: replication
+        value: 5
+      - name: type
+        value: private
+  backstage:
+    create: true
+status:
+  items:
+    git:
+      - repository: github.com/jjsiv/tenants
+        provisioned: true
+        files:
+          - path: tenants/payments/kafka-topics/Test_Topic.yaml

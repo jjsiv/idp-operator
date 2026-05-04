@@ -1,0 +1,48 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - idp.autopay.pl
+  resources:
+  - resources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - idp.autopay.pl
+  resources:
+  - resources/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - idp.autopay.pl
+  resources:
+  - resources/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - idp.autopay.pl
+  resources:
+  - resourcetemplates
+  verbs:
+  - get
+  - list
+  - watch

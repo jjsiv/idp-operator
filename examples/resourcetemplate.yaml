@@ -1,0 +1,63 @@
+apiVersion: idp.autopay.io/v1alpha1
+kind: ResourceTemplate
+metadata:
+  name: kafka-topic
+  namespace: idp-operator-system
+spec:
+  displayName: Kafka topic
+  description: Provisions a Kafka topic via Strimzi resources
+  parameters:
+    - name: tenant
+      schema:
+        type: string
+        immutable: true
+        optional: false
+    - name: name
+      schema:
+        type: string
+        immutable: true
+        optional: false
+    - name: replication
+      schema:
+        type: number
+        immutable: false
+        optional: true
+        default: 3
+    - name: type
+      schema:
+        type: enum
+        immutable: false
+        optional: true
+        default: public
+        values:
+          - public
+          - private
+  provisioning:
+    git:
+      - repositoryURL: github.com/jjsiv/tenants
+        config:
+          author:
+            name: IDP Operator
+            email: "operator@autopay.pl"
+          auth:
+            secretRef:
+              name: tenants-repo-auth
+        branch: main
+        commitMessage: |
+          Create Kafka topic for {{ .parameters.tenant }}
+        templates:
+          - path: "tenants/{{ .parameters.tenant }}/kafka-topics"
+            filename: "{{ .parameters.name }}.yaml"
+            content: |
+              apiVersion: kafka.strimzi.io/v1
+              kind: KafkaTopic
+              metadata:
+                name: {{ .parameters.name }}
+                labels:
+                  strimzi.io/cluster: my-cluster
+              spec:
+                partitions: 1
+                replicas: {{ .parameters.replication }}
+                config:
+                  retention.ms: 7200000
+                  segment.bytes: 1073741824
