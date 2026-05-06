@@ -45,11 +45,7 @@ func (g *Git) Provision() error {
 		}
 	}
 
-	if err := g.pushChanges(repo); err != nil {
-		return err
-	}
-
-	return nil
+	return g.pushChanges(repo)
 }
 
 func (g *Git) Deprovision() error {
@@ -91,6 +87,10 @@ func (g *Git) pushChanges(repo *git.Repository) error {
 			When:  time.Now(),
 		},
 	})
+	// return early
+	if errors.Is(err, git.ErrEmptyCommit) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}

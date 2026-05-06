@@ -19,7 +19,6 @@ package controller
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"text/template"
 
@@ -28,8 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/go-logr/logr"
 	idpv1alpha1 "github.com/jjsiv/idp/api/v1alpha1"
@@ -65,10 +66,14 @@ func (r *ResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
+	templateNamespace := resource.Namespace
+	if resource.Spec.TemplateRef.Namespace != "" {
+		templateNamespace = resource.Spec.TemplateRef.Namespace
+	}
 	var template idpv1alpha1.ResourceTemplate
 	if err := r.Client.Get(ctx, types.NamespacedName{
 		Name:      resource.Spec.TemplateRef.Name,
-		Namespace: resource.Spec.TemplateRef.Namespace,
+		Namespace: templateNamespace,
 	}, &template); err != nil {
 		r.Logger.Error(err, "failed to get ResourceTemplate")
 		return ctrl.Result{}, err
@@ -108,16 +113,21 @@ func (r *ResourceReconciler) setupProvisioners(ctx context.Context, resource *id
 
 	if template.Spec.Provisioning.Git != nil {
 		for _, gitProvisioner := range template.Spec.Provisioning.Git {
+			secretNamespace := template.Namespace
+			if gitProvisioner.Config.Auth.SecretRef.Namespace != "" {
+				secretNamespace = gitProvisioner.Config.Auth.SecretRef.Namespace
+			}
 			var keySecret v1.Secret
 			if err := r.Client.Get(ctx, types.NamespacedName{
-				Name: gitProvisioner.Config.Auth.SecretRef.Name,
+				Name:      gitProvisioner.Config.Auth.SecretRef.Name,
+				Namespace: secretNamespace,
 			}, &keySecret); err != nil {
 				return nil, fmt.Errorf("failed to retrieve authentication secret: %s", err)
 			}
 
-			privateKey, ok := keySecret.Data["private-key"]
+			privateKey, ok := keySecret.Data[gitProvisioner.Config.Auth.SecretRef.Key]
 			if !ok {
-				return nil, errors.New("authentication secret must contain private-key key")
+				return nil, fmt.Errorf("key %s not found in secret %s", gitProvisioner.Config.Auth.SecretRef.Key, gitProvisioner.Config.Auth.SecretRef.Name)
 			}
 
 			repo := provisioner.GitRepository{
@@ -203,7 +213,7 @@ func templateText(vars map[string]any, text string) ([]byte, error) {
 // SetupWithManager sets up the controller with the Manager.
 func (r *ResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&idpv1alpha1.Resource{}).
+		For(&idpv1alpha1.Resource{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Named("resource").
 		Complete(r)
 }

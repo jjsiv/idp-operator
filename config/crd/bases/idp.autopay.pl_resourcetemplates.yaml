@@ -136,6 +136,11 @@ spec:
                                     name:
                                       description: Name of the secret.
                                       type: string
+                                    namespace:
+                                      description: |-
+                                        Namespace of the secret.
+                                        If unset, template's namespace will be used.
+                                      type: string
                                   required:
                                   - key
                                   - name

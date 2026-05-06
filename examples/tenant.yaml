@@ -1,0 +1,18 @@
+apiVersion: idp.autopay.pl/v1alpha1
+kind: Tenant
+metadata:
+  name: payments
+  namespace: payments
+spec:
+  displayName: Payments
+  description: |
+    Payments services
+  groups:
+    - name: idp-payments-members
+  members:
+    - name: A B
+      email: a.b@autopay.pl
+    - name: C D
+      email: c.d@autopay.pl
+    - name: F G
+      email: f.g@autopay.pl

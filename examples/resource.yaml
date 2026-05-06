@@ -1,8 +1,8 @@
-apiVersion: idp.autopay.io/v1alpha1
+apiVersion: idp.autopay.pl/v1alpha1
 kind: Resource
 metadata:
   name: test-topic
-  namespace: payments
+  namespace: idp-system
 spec:
   displayName: Test_Topic
   description: Test_Topic is used for testing Kafka topics
@@ -10,21 +10,13 @@ spec:
     name: payments
   templateRef:
     name: kafka-topic
+    namespace: idp-system
     parameters:
       - name: tenant
         value: payments
       - name: name
         value: Test_Topic
       - name: replication
-        value: 5
+        value: "5"
       - name: type
         value: private
-  backstage:
-    create: true
-status:
-  items:
-    git:
-      - repository: github.com/jjsiv/tenants
-        provisioned: true
-        files:
-          - path: tenants/payments/kafka-topics/Test_Topic.yaml

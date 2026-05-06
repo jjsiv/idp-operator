@@ -135,6 +135,11 @@ type SecretReference struct {
 	// +required
 	Name string `json:"name"`
 
+	// Namespace of the secret.
+	// If unset, template's namespace will be used.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+
 	// Key containing the private key for authentication.
 	// +required
 	Key string `json:"key"`
