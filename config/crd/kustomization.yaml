@@ -4,6 +4,7 @@
 resources:
 - bases/idp.autopay.pl_resources.yaml
 - bases/idp.autopay.pl_resourcetemplates.yaml
+- bases/idp.autopay.pl_tenants.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

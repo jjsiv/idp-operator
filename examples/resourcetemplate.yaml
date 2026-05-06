@@ -39,7 +39,7 @@ spec:
             secretRef:
               name: git-auth
               key: private-key
-        branch: "refs/heads/master"
+        branch: master
         commitMessage: |
           Create Kafka topic for {{ .parameters.tenant }}
         templates:
@@ -58,9 +58,21 @@ spec:
                 config:
                   retention.ms: 7200000
                   segment.bytes: 1073741824
-    backstage:
+    backstageCatalogEntity:
+      location:
+        git:
+          repositryURL: git@github.com:jjsiv/resources.git
+          config:
+            author: IDP Operator
+            email: operator@autopay.pl
+          auth:
+            name: git-auth
+            key: private-key
+          branch: master
       template:
-        name: kafka-topic-{{ .resource.name }}
-        type: kafka-topic
-        dependsOn:
-          - reosurce:default/kafka-cluster
+        metadata:
+          name: kafka-topic-{{ .resource.name }}
+        spec:
+          type: kafka-topic
+          dependsOn:
+            - reosurce:default/kafka-cluster

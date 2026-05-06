@@ -26,4 +26,13 @@ resources:
   kind: ResourceTemplate
   path: github.com/jjsiv/idp/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: autopay.pl
+  group: idp
+  kind: Tenant
+  path: github.com/jjsiv/idp/api/v1alpha1
+  version: v1alpha1
 version: "3"

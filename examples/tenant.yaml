@@ -7,12 +7,42 @@ spec:
   displayName: Payments
   description: |
     Payments services
-  groups:
-    - name: idp-payments-members
+  identityProvider:
+    okta:
+      groups:
+        - name: idp-payments-members
+        - name: idp-payments-maintainers
+          roles:
+            - maintainer
   members:
-    - name: A B
-      email: a.b@autopay.pl
-    - name: C D
-      email: c.d@autopay.pl
-    - name: F G
-      email: f.g@autopay.pl
+    - email: a.b@autopay.pl
+      entityName: a-b
+      roles:
+        - owner
+        - maintainer
+        - approver
+    - email: c.d@autopay.pl
+      entityName: c-d
+      roles:
+        - maintainer
+    - email: f.g@autopay.pl
+      entityName: f-g
+      roles:
+        - developer
+    - email: h.j@autopay.pl
+      entityName: h-j
+      roles:
+        - project-manager
+  backstageEntityProvisioning:
+    git:
+      repositoryURL: git@github.com:jjsiv/catalog.git
+      branch: main
+      config:
+        author:
+          email: operator@autopay.pl
+          name: IDP Operator
+        auth:
+          secretRef:
+            name: git-auth
+            key: private-key
+      path: "{{ .tenant.name }}/catalog-info.yaml"

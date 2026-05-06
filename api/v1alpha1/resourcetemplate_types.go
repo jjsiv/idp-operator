@@ -74,7 +74,15 @@ type TemplateParameterSchema struct {
 // ResourceProvisioning defines the provisioning configuration for a ResourceTemplate.
 type ResourceProvisioning struct {
 	// Git defines a strategy of provisioning resource by creating files in Git repositories.
-	Git []*GitProvisioning `json:"git,omitempty"`
+	Git []*ResourceProvisioningGit `json:"git,omitempty"`
+}
+
+type ResourceProvisioningGit struct {
+	GitProvisioning `json:",inline"`
+
+	// Files to create in the repository.
+	// +required
+	Templates []FileTemplate `json:"templates"`
 }
 
 // GitProvisioning defines a provisioning method that creates files in Git repositories.
@@ -94,10 +102,6 @@ type GitProvisioning struct {
 	// Message for the commit that will be created.
 	// +required
 	CommitMessage string `json:"commitMessage"`
-
-	// Files to create in the repository.
-	// +required
-	Templates []FileTemplate `json:"templates"`
 }
 
 // GitConfig defines configuration for repository connection.

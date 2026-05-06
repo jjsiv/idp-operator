@@ -2,4 +2,5 @@
 resources:
 - idp_v1alpha1_resource.yaml
 - idp_v1alpha1_resourcetemplate.yaml
+- idp_v1alpha1_tenant.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

@@ -27,7 +27,7 @@ type ResourceSpec struct {
 
 	// Reference to a Tenant that will be set as the owner of this Resource.
 	// +required
-	TenantRef TenantReference `json:"tenantRef"`
+	OwnerRef OwnerReference `json:"ownerRef"`
 
 	// Reference to a ResourceTemplate that this Resource will be provisioned from.
 	// +required
@@ -40,9 +40,15 @@ type ResourceSpec struct {
 	Backstage BackstageResourceSpec `json:"backstage,omitempty"`
 }
 
-// Reference to a Tenant resource.
-type TenantReference struct {
+// Reference to an owner resource.
+type OwnerReference struct {
+	// Reference to owner's Kind.
+	// Only "Tenant" is supported.
+	// +required
+	Kind string `json:"kind"`
+
 	// Name of the Tenant resource in the same namespace.
+	// // +required
 	Name string `json:"name"`
 }
 
