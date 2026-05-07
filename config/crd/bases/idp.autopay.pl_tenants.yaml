@@ -4,28 +4,25 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: resources.idp.autopay.pl
+  name: tenants.idp.autopay.pl
 spec:
   group: idp.autopay.pl
   names:
-    kind: Resource
-    listKind: ResourceList
-    plural: resources
-    singular: resource
+    kind: Tenant
+    listKind: TenantList
+    plural: tenants
+    singular: tenant
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.displayName
-      name: Resource name
-      type: string
-    - jsonPath: .spec.tenantRef.name
-      name: Owner
-      type: string
-    - jsonPath: .spec.templateRef.name
-      name: Template
+    - jsonPath: .spec.tenantName
+      name: Tenant name
       type: string
     - jsonPath: .status.provisioned
       name: Provisioned
+      type: string
+    - jsonPath: .status.backstageGroup
+      name: Backstage group
       type: string
     - jsonPath: .spec.description
       name: Description
@@ -36,7 +33,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Resource is the Schema for the resources API
+        description: Tenant is the Schema for the tenants API
         properties:
           apiVersion:
             description: |-
@@ -56,19 +53,77 @@ spec:
           metadata:
             type: object
           spec:
-            description: spec defines the desired state of Resource
+            description: spec defines the desired state of Tenant
             properties:
-              backstage:
-                description: |-
-                  Specification for Backstage Software Catalog Resource to create from this Resource.
-                  Resource owner will be set to the Tenant Backstage Group.
-                  Type will be set to ResourceTemplate's name.
-                  Parameters passed to the template as well as other values will be exposed as annotations.
+              backstageEntityProvisioning:
+                description: Configuration for provisoning Backstage Software catalog
+                  Entities associated with this Tenant.
                 properties:
-                  create:
-                    description: Create defines whether the Backstage Resource should
-                      be created.
-                    type: boolean
+                  branch:
+                    description: Branch to push to. If unset, default will be assumed.
+                    type: string
+                  commitMessage:
+                    description: Message for the commit that will be created.
+                    type: string
+                  config:
+                    description: Configuration for repository connection.
+                    properties:
+                      auth:
+                        description: Authentication information for cloning and pushing
+                          to the repository.
+                        properties:
+                          secretRef:
+                            description: Reference to a Kubernetes secret. Must be
+                              found in the same namespace.
+                            properties:
+                              key:
+                                description: Key containing the private key for authentication.
+                                type: string
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: |-
+                                  Namespace of the secret.
+                                  If unset, template's namespace will be used.
+                                type: string
+                            required:
+                            - key
+                            - name
+                            type: object
+                        required:
+                        - secretRef
+                        type: object
+                      author:
+                        description: Information about commit author.
+                        properties:
+                          email:
+                            description: Commit author's email.
+                            type: string
+                          name:
+                            description: Commit author's name.
+                            type: string
+                        required:
+                        - email
+                        - name
+                        type: object
+                    required:
+                    - auth
+                    - author
+                    type: object
+                  path:
+                    description: |-
+                      Path (full directory + filename) to create catalog entities.
+                      Supports Go templating with {{ .tenant.name }}.
+                    type: string
+                  repositoryURL:
+                    description: URL of the repository to create files in.
+                    type: string
+                required:
+                - commitMessage
+                - config
+                - path
+                - repositoryURL
                 type: object
               description:
                 description: Description about this resource.
@@ -76,65 +131,67 @@ spec:
               displayName:
                 description: Human readalbe name of the resource.
                 type: string
-              ownerRef:
-                description: Reference to a Tenant that will be set as the owner of
-                  this Resource.
+              identityProvider:
+                description: Configuring an identity provider allows for creating
+                  of identity groups for members of this project.
                 properties:
-                  kind:
-                    description: |-
-                      Reference to owner's Kind.
-                      Only "Tenant" is supported.
-                    type: string
-                  name:
-                    description: |-
-                      Name of the Tenant resource in the same namespace.
-                      // +required
-                    type: string
-                required:
-                - kind
-                - name
+                  okta:
+                    description: Configuration for Okta integration.
+                    properties:
+                      groups:
+                        description: Groups to create.
+                        items:
+                          properties:
+                            name:
+                              description: Name of the group to create.
+                              type: string
+                            roles:
+                              description: Only members with the specified roles will
+                                be added to this group.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - name
+                          type: object
+                        type: array
+                    required:
+                    - groups
+                    type: object
                 type: object
-              templateRef:
-                description: Reference to a ResourceTemplate that this Resource will
-                  be provisioned from.
-                properties:
-                  name:
-                    description: Name of the ResourceTemplate.
-                    type: string
-                  namespace:
-                    description: Namespace of the ResourceTemplate. If not specified,
-                      it is assumed to be in the same namespace as the Resource.
-                    type: string
-                  parameters:
-                    description: Parameters to pass to the template.
-                    items:
-                      description: ResourceParameter is a spec for parameters to pass
-                        to a template.
-                      properties:
-                        name:
-                          description: Name of the parameter.
-                          type: string
-                        value:
-                          description: Value for the parameter.
-                          type: string
-                      required:
-                      - name
-                      - value
-                      type: object
-                    type: array
-                required:
-                - name
-                type: object
+              members:
+                description: Members of this Tenant.
+                items:
+                  properties:
+                    email:
+                      description: Email address of the user.
+                      type: string
+                    entityName:
+                      description: Name of the User Entity in Backstage.
+                      type: string
+                    roles:
+                      description: Roles to assign to this member.
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - email
+                  - entityName
+                  type: object
+                type: array
             required:
-            - ownerRef
-            - templateRef
+            - backstageEntityProvisioning
+            - members
             type: object
           status:
-            description: status defines the observed state of Resource
+            description: status defines the observed state of Tenant
             properties:
+              backstageGroup:
+                description: Top level Backstage group created from this Tenant.
+                type: string
               conditions:
                 description: |-
-                  conditions represent the current state of the Resource resource.
+                  conditions represent the current state of the Tenant resource.
                   Each condition has a unique type and reflects the status of a specific aspect of the resource.
 
                   Standard condition types include:
@@ -202,7 +259,7 @@ spec:
                 - type
                 x-kubernetes-list-type: map
               provisioned:
-                description: Provisioned indicates whether the Resource has been successfully
+                description: Provisioned indicates whether the Tenant has been successfully
                   provisioned.
                 type: boolean
             type: object

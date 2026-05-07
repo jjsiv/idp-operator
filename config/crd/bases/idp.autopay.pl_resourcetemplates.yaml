@@ -108,8 +108,6 @@ spec:
                     description: Git defines a strategy of provisioning resource by
                       creating files in Git repositories.
                     items:
-                      description: GitProvisioning defines a provisioning method that
-                        creates files in Git repositories.
                       properties:
                         branch:
                           description: Branch to push to. If unset, default will be

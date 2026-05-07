@@ -16,6 +16,7 @@ rules:
   - idp.autopay.pl
   resources:
   - resources
+  - tenants
   verbs:
   - create
   - delete
@@ -28,12 +29,14 @@ rules:
   - idp.autopay.pl
   resources:
   - resources/finalizers
+  - tenants/finalizers
   verbs:
   - update
 - apiGroups:
   - idp.autopay.pl
   resources:
   - resources/status
+  - tenants/status
   verbs:
   - get
   - patch
