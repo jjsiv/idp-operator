@@ -35,16 +35,7 @@ type TenantSpec struct {
 
 	// Configuration for provisoning Backstage Software catalog Entities associated with this Tenant.
 	// +required
-	BackstageEntityProvisioning BackstageEntityProvisioningConfig `json:"backstageEntityProvisioning,omitempty"`
-}
-
-type BackstageEntityProvisioningConfig struct {
-	GitProvisioning `json:",inline"`
-
-	// Path (full directory + filename) to create catalog entities.
-	// Supports Go templating with {{ .tenant.name }}.
-	// +required
-	Path string `json:"path"`
+	BackstageCatalog BackstageCatalogSpec `json:"backstageCatalog,omitempty"`
 }
 
 type IdentityProviderConfiguration struct {

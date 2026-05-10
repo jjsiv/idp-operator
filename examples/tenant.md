@@ -5,11 +5,18 @@ Tenant opisuje czlonkow zespolu, ich role (np. owner, approver, maintainer) oraz
 
 Tenant jest tez wlascicielem wszystkich Resourcow wykorzystywanych przez indywidualne komponenty - np. bazy danych, topiki, kolejki.
 
-Tenant controller odpowiedzialny jest za stworzenie:
+W oryginalnym rozwiązaniu Tenant controller odpowiedzialny jest za stworzenie:
 
 - System i Group w Backstage
 - stworzenie grup w AD i dodanie czlonkow
 - stworzenie wspolnych zasobow
+
+Co należy wziąć pod uwagę:
+
+- czy System zawsze powinien być tworzony - czy może Tenant jest częścią istniejącego Systemu
+- Domain - czy tworzyć? Czy też część istniejącego
+- jeśli tworzymy System/Domain - kwestia Groups i ich członkostwa. Czy Domain/System powinny mieć oddzielna grupę ownerową? Kto powinien być jej członkiem?
+- kwestia ownershipu Componentow. Czy zespol rozwijajacy Component to osobny zespół?
 
 Na przyklad, dla takiego Tenanta:
 

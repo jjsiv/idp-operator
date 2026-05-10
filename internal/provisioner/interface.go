@@ -1,6 +1,6 @@
 package provisioner
 
 type Provisioner interface {
-	Provision() error
+	Provision(...*GitFile) error
 	Deprovision() error
 }

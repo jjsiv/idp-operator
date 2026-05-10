@@ -107,99 +107,97 @@ spec:
                   git:
                     description: Git defines a strategy of provisioning resource by
                       creating files in Git repositories.
-                    items:
-                      properties:
-                        branch:
-                          description: Branch to push to. If unset, default will be
-                            assumed.
-                          type: string
-                        commitMessage:
-                          description: Message for the commit that will be created.
-                          type: string
-                        config:
-                          description: Configuration for repository connection.
-                          properties:
-                            auth:
-                              description: Authentication information for cloning
-                                and pushing to the repository.
-                              properties:
-                                secretRef:
-                                  description: Reference to a Kubernetes secret. Must
-                                    be found in the same namespace.
-                                  properties:
-                                    key:
-                                      description: Key containing the private key
-                                        for authentication.
-                                      type: string
-                                    name:
-                                      description: Name of the secret.
-                                      type: string
-                                    namespace:
-                                      description: |-
-                                        Namespace of the secret.
-                                        If unset, template's namespace will be used.
-                                      type: string
-                                  required:
-                                  - key
-                                  - name
-                                  type: object
-                              required:
-                              - secretRef
-                              type: object
-                            author:
-                              description: Information about commit author.
-                              properties:
-                                email:
-                                  description: Commit author's email.
-                                  type: string
-                                name:
-                                  description: Commit author's name.
-                                  type: string
-                              required:
-                              - email
-                              - name
-                              type: object
-                          required:
-                          - auth
-                          - author
-                          type: object
-                        repositoryURL:
-                          description: URL of the repository to create files in.
-                          type: string
-                        templates:
-                          description: Files to create in the repository.
-                          items:
-                            description: FileTemplate defines a template for a file
-                              to create.
+                    properties:
+                      branch:
+                        description: Branch to push to. If unset, default will be
+                          assumed.
+                        type: string
+                      commitMessage:
+                        description: Message for the commit that will be created.
+                        type: string
+                      config:
+                        description: Configuration for repository connection.
+                        properties:
+                          auth:
+                            description: Authentication information for cloning and
+                              pushing to the repository.
                             properties:
-                              content:
-                                description: |-
-                                  Content of the file.
-                                  Supports Go templating.
+                              secretRef:
+                                description: Reference to a Kubernetes secret. Must
+                                  be found in the same namespace.
+                                properties:
+                                  key:
+                                    description: Key containing the private key for
+                                      authentication.
+                                    type: string
+                                  name:
+                                    description: Name of the secret.
+                                    type: string
+                                  namespace:
+                                    description: |-
+                                      Namespace of the secret.
+                                      If unset, template's namespace will be used.
+                                    type: string
+                                required:
+                                - key
+                                - name
+                                type: object
+                            required:
+                            - secretRef
+                            type: object
+                          author:
+                            description: Information about commit author.
+                            properties:
+                              email:
+                                description: Commit author's email.
                                 type: string
-                              filename:
-                                description: |-
-                                  Name of the file to create.
-                                  Supports Go templating.
-                                type: string
-                              path:
-                                description: |-
-                                  Path at which the file will be created (without file name).
-                                  Supports Go templating.
+                              name:
+                                description: Commit author's name.
                                 type: string
                             required:
-                            - content
-                            - filename
-                            - path
+                            - email
+                            - name
                             type: object
-                          type: array
-                      required:
-                      - commitMessage
-                      - config
-                      - repositoryURL
-                      - templates
-                      type: object
-                    type: array
+                        required:
+                        - auth
+                        - author
+                        type: object
+                      repositoryURL:
+                        description: URL of the repository to create files in.
+                        type: string
+                      templates:
+                        description: Files to create in the repository.
+                        items:
+                          description: FileTemplate defines a template for a file
+                            to create.
+                          properties:
+                            content:
+                              description: |-
+                                Content of the file.
+                                Supports Go templating.
+                              type: string
+                            filename:
+                              description: |-
+                                Name of the file to create.
+                                Supports Go templating.
+                              type: string
+                            path:
+                              description: |-
+                                Path at which the file will be created (without file name).
+                                Supports Go templating.
+                              type: string
+                          required:
+                          - content
+                          - filename
+                          - path
+                          type: object
+                        type: array
+                    required:
+                    - commitMessage
+                    - config
+                    - repositoryURL
+                    - templates
+                    type: object
                 type: object
             required:
             - provisioning

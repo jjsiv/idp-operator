@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	github.com/go-git/go-git/v6 v6.0.0-alpha.2
 	github.com/go-logr/logr v1.4.3
+	github.com/goccy/go-yaml v1.19.2
 	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/onsi/gomega v1.38.2
 	k8s.io/api v0.35.0

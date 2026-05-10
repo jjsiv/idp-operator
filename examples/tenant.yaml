@@ -2,7 +2,7 @@ apiVersion: idp.autopay.pl/v1alpha1
 kind: Tenant
 metadata:
   name: payments
-  namespace: payments
+  namespace: idp-system
 spec:
   displayName: Payments
   description: |
@@ -33,16 +33,18 @@ spec:
       entityName: h-j
       roles:
         - project-manager
-  backstageEntityProvisioning:
-    git:
-      repositoryURL: git@github.com:jjsiv/catalog.git
-      branch: main
-      config:
-        author:
-          email: operator@autopay.pl
-          name: IDP Operator
-        auth:
-          secretRef:
-            name: git-auth
-            key: private-key
-      path: "{{ .tenant.name }}/catalog-info.yaml"
+  backstageCatalog:
+    provisioning:
+      git:
+        repositoryURL: git@github.com:jjsiv/catalog.git
+        branch: "refs/heads/master"
+        commitMessage: "Create catalog-info.yaml"
+        config:
+          author:
+            email: operator@autopay.pl
+            name: IDP Operator
+          auth:
+            secretRef:
+              name: git-auth
+              key: private-key
+        path: "{{ .tenant.name }}/catalog-info.yaml"

@@ -18,11 +18,10 @@ import (
 
 type Git struct {
 	repository *GitRepository
-	files      []GitFile
 	keys       *ssh.PublicKeys
 }
 
-func (g *Git) Provision() error {
+func (g *Git) Provision(files ...*GitFile) error {
 	repo, err := g.cloneRepository()
 	if err != nil {
 		return err
@@ -34,7 +33,7 @@ func (g *Git) Provision() error {
 	}
 
 	repoPath := w.Filesystem.Root()
-	for _, file := range g.files {
+	for _, file := range files {
 		fileFullPath := repoPath + "/" + file.Path
 		if err := os.MkdirAll(filepath.Dir(fileFullPath), 0755); err != nil {
 			return fmt.Errorf("failed to create directories for file %s: %w", file.Path, err)
@@ -55,9 +54,10 @@ func (g *Git) Deprovision() error {
 func (g *Git) cloneRepository() (*git.Repository, error) {
 	repoPath := os.TempDir() + "/" + generateRepoName()
 	repo, err := git.PlainClone(repoPath, &git.CloneOptions{
-		URL:           g.repository.URL,
-		ReferenceName: plumbing.ReferenceName(g.repository.Ref),
-		Depth:         1,
+		URL:            g.repository.URL,
+		ReferenceName:  plumbing.NewBranchReferenceName(g.repository.Branch),
+		Depth:          1,
+		AllowEmptyRepo: true,
 		ClientOptions: []client.Option{
 			client.WithSSHAuth(g.keys),
 		},
@@ -104,7 +104,7 @@ func (g *Git) pushChanges(repo *git.Repository) error {
 	return nil
 }
 
-func NewGitProvisioner(repo *GitRepository, files []GitFile) (*Git, error) {
+func NewGitProvisioner(repo *GitRepository) (*Git, error) {
 	if repo.URL == "" {
 		return nil, errors.New("repositoryURL must not be empty")
 	}
@@ -132,14 +132,13 @@ func NewGitProvisioner(repo *GitRepository, files []GitFile) (*Git, error) {
 
 	return &Git{
 		repository: repo,
-		files:      files,
 		keys:       keys,
 	}, nil
 }
 
 type GitRepository struct {
 	URL          string        `json:"url"`
-	Ref          string        `json:"ref,omitempty"`
+	Branch       string        `json:"branch,omitempty"`
 	KeyAuth      *GitKeyAuth   `json:"keyAuth,omitempty"`
 	CommitAuthor *CommitAuthor `json:"commitAuthor"`
 }

@@ -94,7 +94,7 @@ func (r *ResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	for _, p := range provisioners {
-		if err := p.Provision(); err != nil {
+		if err := p.Provision(p.GitFiles...); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to provision resource: %w", err)
 		}
 	}
@@ -108,58 +108,65 @@ func (r *ResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-func (r *ResourceReconciler) setupProvisioners(ctx context.Context, resource *idpv1alpha1.Resource, template *idpv1alpha1.ResourceTemplate) ([]provisioner.Provisioner, error) {
-	var provisioners []provisioner.Provisioner
+type provisionerWithFiles struct {
+	provisioner.Provisioner
+	GitFiles []*provisioner.GitFile
+}
+
+func (r *ResourceReconciler) setupProvisioners(ctx context.Context, resource *idpv1alpha1.Resource, template *idpv1alpha1.ResourceTemplate) ([]provisionerWithFiles, error) {
+	var provisioners []provisionerWithFiles
 
 	if template.Spec.Provisioning.Git != nil {
-		for _, gitProvisioner := range template.Spec.Provisioning.Git {
-			secretNamespace := template.Namespace
-			if gitProvisioner.Config.Auth.SecretRef.Namespace != "" {
-				secretNamespace = gitProvisioner.Config.Auth.SecretRef.Namespace
-			}
-			var keySecret v1.Secret
-			if err := r.Client.Get(ctx, types.NamespacedName{
-				Name:      gitProvisioner.Config.Auth.SecretRef.Name,
-				Namespace: secretNamespace,
-			}, &keySecret); err != nil {
-				return nil, fmt.Errorf("failed to retrieve authentication secret: %s", err)
-			}
+		gitProvisioner := template.Spec.Provisioning.Git
 
-			privateKey, ok := keySecret.Data[gitProvisioner.Config.Auth.SecretRef.Key]
-			if !ok {
-				return nil, fmt.Errorf("key %s not found in secret %s", gitProvisioner.Config.Auth.SecretRef.Key, gitProvisioner.Config.Auth.SecretRef.Name)
-			}
-
-			repo := provisioner.GitRepository{
-				URL: gitProvisioner.RepositoryURL,
-				Ref: gitProvisioner.Branch,
-				CommitAuthor: &provisioner.CommitAuthor{
-					Name:  gitProvisioner.Config.Author.Name,
-					Email: gitProvisioner.Config.Author.Email,
-				},
-				KeyAuth: &provisioner.GitKeyAuth{
-					PrivateKey: privateKey,
-				},
-			}
-
-			files, err := renderFileTemplates(resource.Spec.TemplateRef.Parameters, gitProvisioner.Templates)
-			if err != nil {
-				return nil, err
-			}
-
-			p, err := provisioner.NewGitProvisioner(&repo, files)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create git provisioner: %w", err)
-			}
-
-			provisioners = append(provisioners, p)
+		secretNamespace := template.Namespace
+		if gitProvisioner.Config.Auth.SecretRef.Namespace != "" {
+			secretNamespace = gitProvisioner.Config.Auth.SecretRef.Namespace
 		}
-	}
+		var keySecret v1.Secret
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Name:      gitProvisioner.Config.Auth.SecretRef.Name,
+			Namespace: secretNamespace,
+		}, &keySecret); err != nil {
+			return nil, fmt.Errorf("failed to retrieve authentication secret: %s", err)
+		}
 
+		privateKey, ok := keySecret.Data[gitProvisioner.Config.Auth.SecretRef.Key]
+		if !ok {
+			return nil, fmt.Errorf("key %s not found in secret %s", gitProvisioner.Config.Auth.SecretRef.Key, gitProvisioner.Config.Auth.SecretRef.Name)
+		}
+
+		repo := provisioner.GitRepository{
+			URL:    gitProvisioner.RepositoryURL,
+			Branch: gitProvisioner.Branch,
+			CommitAuthor: &provisioner.CommitAuthor{
+				Name:  gitProvisioner.Config.Author.Name,
+				Email: gitProvisioner.Config.Author.Email,
+			},
+			KeyAuth: &provisioner.GitKeyAuth{
+				PrivateKey: privateKey,
+			},
+		}
+
+		files, err := renderFileTemplates(resource.Spec.TemplateRef.Parameters, gitProvisioner.Templates)
+		if err != nil {
+			return nil, err
+		}
+
+		p, err := provisioner.NewGitProvisioner(&repo)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create git provisioner: %w", err)
+		}
+
+		provisioners = append(provisioners, provisionerWithFiles{
+			Provisioner: p,
+			GitFiles:    files,
+		})
+	}
 	return provisioners, nil
 }
 
-func renderFileTemplates(params []idpv1alpha1.ResourceParameter, fileTemplates []idpv1alpha1.FileTemplate) ([]provisioner.GitFile, error) {
+func renderFileTemplates(params []idpv1alpha1.ResourceParameter, fileTemplates []idpv1alpha1.FileTemplate) ([]*provisioner.GitFile, error) {
 	paramMap := make(map[string]any, len(params))
 	for _, param := range params {
 		paramMap[param.Name] = param.Value
@@ -169,7 +176,7 @@ func renderFileTemplates(params []idpv1alpha1.ResourceParameter, fileTemplates [
 		"parameters": paramMap,
 	}
 
-	var files []provisioner.GitFile
+	var files []*provisioner.GitFile
 	for _, fileTemplate := range fileTemplates {
 		// TODO: there is probably a better way to do this
 		filename, err := templateText(variables, fileTemplate.Filename)
@@ -187,7 +194,7 @@ func renderFileTemplates(params []idpv1alpha1.ResourceParameter, fileTemplates [
 			return nil, err
 		}
 
-		files = append(files, provisioner.GitFile{
+		files = append(files, &provisioner.GitFile{
 			Path:    string(path) + "/" + string(filename),
 			Content: content,
 		})

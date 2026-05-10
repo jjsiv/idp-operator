@@ -58,21 +58,21 @@ spec:
                 config:
                   retention.ms: 7200000
                   segment.bytes: 1073741824
-    backstageCatalogEntity:
-      location:
-        git:
-          repositryURL: git@github.com:jjsiv/resources.git
-          config:
-            author: IDP Operator
-            email: operator@autopay.pl
-          auth:
-            name: git-auth
-            key: private-key
-          branch: master
-      template:
-        metadata:
-          name: kafka-topic-{{ .resource.name }}
-        spec:
-          type: kafka-topic
-          dependsOn:
-            - reosurce:default/kafka-cluster
+  backstageCatalog:
+    provisioning:
+      git:
+        repositryURL: git@github.com:jjsiv/resources.git
+        config:
+          author: IDP Operator
+          email: operator@autopay.pl
+        auth:
+          name: git-auth
+          key: private-key
+        branch: master
+    template:
+      metadata:
+        name: kafka-topic-{{ .resource.name }}
+      spec:
+        type: kafka-topic
+        dependsOn:
+          - resource:default/kafka-cluster
