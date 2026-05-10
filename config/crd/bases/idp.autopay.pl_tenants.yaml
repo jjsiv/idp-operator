@@ -123,9 +123,8 @@ spec:
                             - author
                             type: object
                           path:
-                            description: |-
-                              Path (full directory + filename) to create catalog entities.
-                              Supports Go templating with {{ .tenant.name }}.
+                            description: Path (full directory + filename) to create
+                              catalog entities.
                             type: string
                           repositoryURL:
                             description: URL of the repository to create files in.

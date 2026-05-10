@@ -49,6 +49,92 @@ spec:
           spec:
             description: spec defines the desired state of ResourceTemplate
             properties:
+              backstageCatalog:
+                description: Configuration for provisoning Backstage Software catalog
+                  Entities associated with this Resource.
+                properties:
+                  provisioning:
+                    description: Strategy for provisioning Backstage Software catalog
+                      entity data.
+                    properties:
+                      git:
+                        description: |-
+                          Provision entity data as file in a Git repository.
+                          This is the only supported option currently.
+                        properties:
+                          branch:
+                            description: Branch to push to. If unset, default will
+                              be assumed.
+                            type: string
+                          commitMessage:
+                            description: Message for the commit that will be created.
+                            type: string
+                          config:
+                            description: Configuration for repository connection.
+                            properties:
+                              auth:
+                                description: Authentication information for cloning
+                                  and pushing to the repository.
+                                properties:
+                                  secretRef:
+                                    description: Reference to a Kubernetes secret.
+                                      Must be found in the same namespace.
+                                    properties:
+                                      key:
+                                        description: Key containing the private key
+                                          for authentication.
+                                        type: string
+                                      name:
+                                        description: Name of the secret.
+                                        type: string
+                                      namespace:
+                                        description: |-
+                                          Namespace of the secret.
+                                          If unset, template's namespace will be used.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                required:
+                                - secretRef
+                                type: object
+                              author:
+                                description: Information about commit author.
+                                properties:
+                                  email:
+                                    description: Commit author's email.
+                                    type: string
+                                  name:
+                                    description: Commit author's name.
+                                    type: string
+                                required:
+                                - email
+                                - name
+                                type: object
+                            required:
+                            - auth
+                            - author
+                            type: object
+                          path:
+                            description: Path (full directory + filename) to create
+                              catalog entities.
+                            type: string
+                          repositoryURL:
+                            description: URL of the repository to create files in.
+                            type: string
+                        required:
+                        - commitMessage
+                        - config
+                        - path
+                        - repositoryURL
+                        type: object
+                    required:
+                    - git
+                    type: object
+                required:
+                - provisioning
+                type: object
               description:
                 description: Description about this resource.
                 type: string
@@ -200,6 +286,7 @@ spec:
                     type: object
                 type: object
             required:
+            - backstageCatalog
             - provisioning
             type: object
           status:

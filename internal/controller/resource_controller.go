@@ -113,57 +113,76 @@ type provisionerWithFiles struct {
 	GitFiles []*provisioner.GitFile
 }
 
-func (r *ResourceReconciler) setupProvisioners(ctx context.Context, resource *idpv1alpha1.Resource, template *idpv1alpha1.ResourceTemplate) ([]provisionerWithFiles, error) {
-	var provisioners []provisionerWithFiles
+func (r *ResourceReconciler) setupProvisioners(ctx context.Context, resource *idpv1alpha1.Resource, template *idpv1alpha1.ResourceTemplate) ([]*provisionerWithFiles, error) {
+	var provisioners []*provisionerWithFiles
 
 	if template.Spec.Provisioning.Git != nil {
-		gitProvisioner := template.Spec.Provisioning.Git
-
-		secretNamespace := template.Namespace
-		if gitProvisioner.Config.Auth.SecretRef.Namespace != "" {
-			secretNamespace = gitProvisioner.Config.Auth.SecretRef.Namespace
-		}
-		var keySecret v1.Secret
-		if err := r.Client.Get(ctx, types.NamespacedName{
-			Name:      gitProvisioner.Config.Auth.SecretRef.Name,
-			Namespace: secretNamespace,
-		}, &keySecret); err != nil {
-			return nil, fmt.Errorf("failed to retrieve authentication secret: %s", err)
-		}
-
-		privateKey, ok := keySecret.Data[gitProvisioner.Config.Auth.SecretRef.Key]
-		if !ok {
-			return nil, fmt.Errorf("key %s not found in secret %s", gitProvisioner.Config.Auth.SecretRef.Key, gitProvisioner.Config.Auth.SecretRef.Name)
-		}
-
-		repo := provisioner.GitRepository{
-			URL:    gitProvisioner.RepositoryURL,
-			Branch: gitProvisioner.Branch,
-			CommitAuthor: &provisioner.CommitAuthor{
-				Name:  gitProvisioner.Config.Author.Name,
-				Email: gitProvisioner.Config.Author.Email,
-			},
-			KeyAuth: &provisioner.GitKeyAuth{
-				PrivateKey: privateKey,
-			},
-		}
-
-		files, err := renderFileTemplates(resource.Spec.TemplateRef.Parameters, gitProvisioner.Templates)
+		gitProvisioner, err := r.setupGitProvisioner(ctx, resource, template)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to setup git provisioner: %s", err.Error())
 		}
-
-		p, err := provisioner.NewGitProvisioner(&repo)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create git provisioner: %w", err)
-		}
-
-		provisioners = append(provisioners, provisionerWithFiles{
-			Provisioner: p,
-			GitFiles:    files,
-		})
+		provisioners = append(provisioners, gitProvisioner)
 	}
+
+	if template.Spec.BackstageCatalog.Provisioning.Git != nil {
+		gitProvisioner, err := r.setupGitProvisioner(ctx, resource, template)
+		if err != nil {
+			return nil, fmt.Errorf("failed to setup git provisioner for creating catalog data: %s", err.Error())
+		}
+		provisioners = append(provisioners, gitProvisioner)
+	}
+
 	return provisioners, nil
+}
+
+// TODO: refactor, provisioning and templating should become separate shared packages
+// Also avoid duplication when provisioning resources and catalog-info - when running git provisioning and catalog to the same repo, we do separate clones and pushes which doesnt make sense
+func (r *ResourceReconciler) setupGitProvisioner(ctx context.Context, resource *idpv1alpha1.Resource, template *idpv1alpha1.ResourceTemplate) (*provisionerWithFiles, error) {
+	gitProvisioner := template.Spec.Provisioning.Git
+
+	secretNamespace := template.Namespace
+	if gitProvisioner.Config.Auth.SecretRef.Namespace != "" {
+		secretNamespace = gitProvisioner.Config.Auth.SecretRef.Namespace
+	}
+	var keySecret v1.Secret
+	if err := r.Client.Get(ctx, types.NamespacedName{
+		Name:      gitProvisioner.Config.Auth.SecretRef.Name,
+		Namespace: secretNamespace,
+	}, &keySecret); err != nil {
+		return nil, fmt.Errorf("failed to retrieve authentication secret: %s", err)
+	}
+
+	privateKey, ok := keySecret.Data[gitProvisioner.Config.Auth.SecretRef.Key]
+	if !ok {
+		return nil, fmt.Errorf("key %s not found in secret %s", gitProvisioner.Config.Auth.SecretRef.Key, gitProvisioner.Config.Auth.SecretRef.Name)
+	}
+
+	repo := provisioner.GitRepository{
+		URL:    gitProvisioner.RepositoryURL,
+		Branch: gitProvisioner.Branch,
+		CommitAuthor: &provisioner.CommitAuthor{
+			Name:  gitProvisioner.Config.Author.Name,
+			Email: gitProvisioner.Config.Author.Email,
+		},
+		KeyAuth: &provisioner.GitKeyAuth{
+			PrivateKey: privateKey,
+		},
+	}
+
+	files, err := renderFileTemplates(resource.Spec.TemplateRef.Parameters, gitProvisioner.Templates)
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := provisioner.NewGitProvisioner(&repo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create git provisioner: %w", err)
+	}
+
+	return &provisionerWithFiles{
+		Provisioner: p,
+		GitFiles:    files,
+	}, nil
 }
 
 func renderFileTemplates(params []idpv1alpha1.ResourceParameter, fileTemplates []idpv1alpha1.FileTemplate) ([]*provisioner.GitFile, error) {

@@ -16,6 +16,8 @@ import (
 	"github.com/go-git/go-git/v6/plumbing/transport/ssh"
 )
 
+// TODO: this git provisioning implementation is pretty bad and will lead to issues with conflict and performance.
+// Create a separate Git client abstraction that can be used by the privisoner
 type Git struct {
 	repository *GitRepository
 	keys       *ssh.PublicKeys
