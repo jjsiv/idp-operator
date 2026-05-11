@@ -108,7 +108,7 @@ type ResourceStatus struct {
 // Resource is the Schema for the resources API
 //
 // +kubebuilder:printcolumn:name="Resource name",type="string",JSONPath=".spec.displayName"
-// +kubebuilder:printcolumn:name="Owner",type="string",JSONPath=".spec.tenantRef.name"
+// +kubebuilder:printcolumn:name="Owner",type="string",JSONPath=".spec.ownerRef.name"
 // +kubebuilder:printcolumn:name="Template",type="string",JSONPath=".spec.templateRef.name"
 // +kubebuilder:printcolumn:name="Provisioned",type="string",JSONPath=".status.provisioned"
 // +kubebuilder:printcolumn:name="Description",type="string",JSONPath=".spec.description"

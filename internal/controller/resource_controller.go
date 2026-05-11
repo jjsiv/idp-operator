@@ -33,7 +33,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/go-logr/logr"
+	yaml "github.com/goccy/go-yaml"
 	idpv1alpha1 "github.com/jjsiv/idp/api/v1alpha1"
+	"github.com/jjsiv/idp/internal/backstage"
 	"github.com/jjsiv/idp/internal/provisioner"
 )
 
@@ -121,7 +123,16 @@ func (r *ResourceReconciler) setupProvisioners(ctx context.Context, resource *id
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup git provisioner: %s", err.Error())
 		}
-		provisioners = append(provisioners, gitProvisioner)
+
+		files, err := renderFileTemplates(resource.Spec.TemplateRef.Parameters, template.Spec.Provisioning.Git.Templates)
+		if err != nil {
+			return nil, err
+		}
+
+		provisioners = append(provisioners, &provisionerWithFiles{
+			Provisioner: gitProvisioner,
+			GitFiles:    files,
+		})
 	}
 
 	if template.Spec.BackstageCatalog.Provisioning.Git != nil {
@@ -129,15 +140,68 @@ func (r *ResourceReconciler) setupProvisioners(ctx context.Context, resource *id
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup git provisioner for creating catalog data: %s", err.Error())
 		}
-		provisioners = append(provisioners, gitProvisioner)
+
+		entity, err := backstage.NewResource().FromIDPResource(resource)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Backstage Resource entity: %s", err.Error())
+		}
+
+		var files []*provisioner.GitFile
+		file, err := createResourceCatalogInfoFile(entity, resource, template)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create catalog info file for resource: %s", err.Error())
+		}
+
+		files = append(files, file)
+
+		provisioners = append(provisioners, &provisionerWithFiles{
+			Provisioner: gitProvisioner,
+			GitFiles:    files,
+		})
 	}
 
 	return provisioners, nil
 }
 
+func createResourceCatalogInfoFile(resourceEntity *backstage.Resource, resource *idpv1alpha1.Resource, resourceTemplate *idpv1alpha1.ResourceTemplate) (*provisioner.GitFile, error) {
+	var contentbuf bytes.Buffer
+	encoder := yaml.NewEncoder(&contentbuf)
+	err := encoder.Encode(resourceEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceVarMap := make(map[string]any)
+	paramVarMap := make(map[string]any)
+	resourceVarMap["name"] = resource.Name
+	for _, param := range resource.Spec.TemplateRef.Parameters {
+		paramVarMap[param.Name] = param.Value
+	}
+	variables := map[string]any{
+		"resource":   resourceVarMap,
+		"parameters": paramVarMap,
+	}
+
+	t, err := template.New("").Parse(resourceTemplate.Spec.BackstageCatalog.Provisioning.Git.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathbuf bytes.Buffer
+	err = t.Execute(&pathbuf, variables)
+	if err != nil {
+		return nil, err
+	}
+
+	return &provisioner.GitFile{
+		Path:    pathbuf.String(),
+		Content: contentbuf.Bytes(),
+	}, nil
+}
+
 // TODO: refactor, provisioning and templating should become separate shared packages
 // Also avoid duplication when provisioning resources and catalog-info - when running git provisioning and catalog to the same repo, we do separate clones and pushes which doesnt make sense
-func (r *ResourceReconciler) setupGitProvisioner(ctx context.Context, resource *idpv1alpha1.Resource, template *idpv1alpha1.ResourceTemplate) (*provisionerWithFiles, error) {
+func (r *ResourceReconciler) setupGitProvisioner(ctx context.Context, resource *idpv1alpha1.Resource, template *idpv1alpha1.ResourceTemplate) (provisioner.Provisioner, error) {
 	gitProvisioner := template.Spec.Provisioning.Git
 
 	secretNamespace := template.Namespace
@@ -169,20 +233,12 @@ func (r *ResourceReconciler) setupGitProvisioner(ctx context.Context, resource *
 		},
 	}
 
-	files, err := renderFileTemplates(resource.Spec.TemplateRef.Parameters, gitProvisioner.Templates)
-	if err != nil {
-		return nil, err
-	}
-
 	p, err := provisioner.NewGitProvisioner(&repo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create git provisioner: %w", err)
 	}
 
-	return &provisionerWithFiles{
-		Provisioner: p,
-		GitFiles:    files,
-	}, nil
+	return p, nil
 }
 
 func renderFileTemplates(params []idpv1alpha1.ResourceParameter, fileTemplates []idpv1alpha1.FileTemplate) ([]*provisioner.GitFile, error) {

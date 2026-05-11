@@ -6,7 +6,8 @@ metadata:
 spec:
   displayName: Test_Topic
   description: Test_Topic is used for testing Kafka topics
-  tenantRef:
+  ownerRef:
+    kind: Tenant
     name: payments
   templateRef:
     name: kafka-topic

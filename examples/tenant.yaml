@@ -37,7 +37,7 @@ spec:
     provisioning:
       git:
         repositoryURL: git@github.com:jjsiv/catalog.git
-        branch: "refs/heads/master"
+        branch: "master"
         commitMessage: "Create catalog-info.yaml"
         config:
           author:

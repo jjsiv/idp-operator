@@ -18,7 +18,7 @@ spec:
     - jsonPath: .spec.displayName
       name: Resource name
       type: string
-    - jsonPath: .spec.tenantRef.name
+    - jsonPath: .spec.ownerRef.name
       name: Owner
       type: string
     - jsonPath: .spec.templateRef.name

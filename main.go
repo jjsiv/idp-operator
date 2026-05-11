@@ -1,15 +1,29 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 
-	"github.com/jjsiv/idp/internal/utils"
+	idpv1alpha1 "github.com/jjsiv/idp/api/v1alpha1"
 )
 
 func main() {
+	params := []idpv1alpha1.ResourceParameter{
+		{
+			Name:  "param1",
+			Value: "value2",
+		},
+		{
+			Name:  "param2",
+			Value: "value3",
+		},
+	}
 
-	set := make(utils.Set)
-	set.Insert("admin")
+	json, err := json.Marshal(params)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	fmt.Println(set.Has("def"))
+	fmt.Println(string(json))
 }

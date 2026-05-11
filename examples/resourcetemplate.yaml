@@ -30,49 +30,54 @@ spec:
         optional: true
   provisioning:
     git:
-      - repositoryURL: git@github.com:jjsiv/resources.git
+      repositoryURL: git@github.com:jjsiv/resources.git
+      config:
+        author:
+          name: IDP Operator
+          email: "operator@autopay.pl"
+        auth:
+          secretRef:
+            name: git-auth
+            key: private-key
+      branch: master
+      commitMessage: |
+        Create Kafka topic for {{ .parameters.tenant }}
+      templates:
+        - path: "tenants/{{ .parameters.tenant }}/kafka-topics"
+          filename: "{{ .parameters.name }}.yaml"
+          content: |
+            apiVersion: kafka.strimzi.io/v1
+            kind: KafkaTopic
+            metadata:
+              name: {{ .parameters.name }}
+              labels:
+                strimzi.io/cluster: my-cluster
+            spec:
+              partitions: 1
+              replicas: {{ .parameters.replication }}
+              config:
+                retention.ms: 7200000
+                segment.bytes: 1073741824
+  backstageCatalog:
+    provisioning:
+      git:
+        repositoryURL: git@github.com:jjsiv/resources.git
+        commitMessage: |
+          Create catalog-info.yaml for {{ .parameters.tenant }}
+        path: "tenants/{{ .parameters.tenant }}/kafka-topics/catalog-info.yaml"
         config:
           author:
             name: IDP Operator
-            email: "operator@autopay.pl"
+            email: operator@autopay.pl
           auth:
             secretRef:
               name: git-auth
               key: private-key
         branch: master
-        commitMessage: |
-          Create Kafka topic for {{ .parameters.tenant }}
-        templates:
-          - path: "tenants/{{ .parameters.tenant }}/kafka-topics"
-            filename: "{{ .parameters.name }}.yaml"
-            content: |
-              apiVersion: kafka.strimzi.io/v1
-              kind: KafkaTopic
-              metadata:
-                name: {{ .parameters.name }}
-                labels:
-                  strimzi.io/cluster: my-cluster
-              spec:
-                partitions: 1
-                replicas: {{ .parameters.replication }}
-                config:
-                  retention.ms: 7200000
-                  segment.bytes: 1073741824
-  backstageCatalog:
-    provisioning:
-      git:
-        repositryURL: git@github.com:jjsiv/resources.git
-        config:
-          author: IDP Operator
-          email: operator@autopay.pl
-        auth:
-          name: git-auth
-          key: private-key
-        branch: master
-    template:
-      metadata:
-        name: kafka-topic-{{ .resource.name }}
-      spec:
-        type: kafka-topic
-        dependsOn:
-          - resource:default/kafka-cluster
+    # template:
+    #   metadata:
+    #     name: kafka-topic-{{ .resource.name }}
+    #   spec:
+    #     type: kafka-topic
+    #     dependsOn:
+    #       - resource:default/kafka-cluster

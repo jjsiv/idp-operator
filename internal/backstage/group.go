@@ -75,7 +75,7 @@ func (g *Group) FromTenant(tenant *idpv1alpha1.Tenant, opts ...GroupOption) (*Gr
 		Title:       tenant.Spec.DisplayName,
 		Description: tenant.Spec.Description,
 		Annotations: map[string]string{
-			"idp-operator.autopay.pl/tenant": tenant.Name + "/" + tenant.Namespace,
+			"idp-operator.autopay.pl/tenant": tenant.Namespace + "/" + tenant.Name,
 		},
 	}
 
