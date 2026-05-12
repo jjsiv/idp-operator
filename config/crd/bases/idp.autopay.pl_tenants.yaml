@@ -275,18 +275,20 @@ spec:
                   namespaces:
                     description: |-
                       Namespaces that will be owned by this Tenant.
-                      Owned namespaces will have special annotations set on them to mark the relationshop.
-                    properties:
-                      cluster:
-                        description: Name of the cluster.
-                        type: string
-                      name:
-                        description: Name of the namespace.
-                        type: string
-                    required:
-                    - cluster
-                    - name
-                    type: object
+                      Owned namespaces will have special annotations set on them to mark the relationship.
+                    items:
+                      properties:
+                        cluster:
+                          description: Name of the cluster.
+                          type: string
+                        name:
+                          description: Name of the namespace.
+                          type: string
+                      required:
+                      - cluster
+                      - name
+                      type: object
+                    type: array
                 type: object
               members:
                 description: Members of this Tenant.

@@ -59,9 +59,9 @@ type TenantGitlabGroup struct {
 
 type TenantKubernetesSpec struct {
 	// Namespaces that will be owned by this Tenant.
-	// Owned namespaces will have special annotations set on them to mark the relationshop.
+	// Owned namespaces will have special annotations set on them to mark the relationship.
 	// +optional
-	Namespaces TenantKubernetesNamespace `json:"namespaces,omitempty"`
+	Namespaces []TenantKubernetesNamespace `json:"namespaces,omitempty"`
 }
 
 type TenantKubernetesNamespace struct {
