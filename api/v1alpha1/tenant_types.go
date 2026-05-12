@@ -22,7 +22,6 @@ import (
 
 // TenantSpec defines the desired state of Tenant
 type TenantSpec struct {
-	// +optional
 	Metadata `json:",inline"`
 
 	// Configuring an identity provider allows for creating of identity groups for members of this project.
@@ -33,18 +32,126 @@ type TenantSpec struct {
 	// +required
 	Members []TenantMember `json:"members,omitempty"`
 
+	// Kubernetes infrastructure associated with this Tenant.
+	// +optional
+	Kubernetes TenantKubernetesSpec `json:"kubernetes,omitempty"`
+
+	// Gitlab infrastructure associated with this Tenant.
+	// +optional
+	Gitlab TenantGitlabSpec `json:"gitlab,omitempty"`
+
 	// Configuration for provisoning Backstage Software catalog Entities associated with this Tenant.
 	// +required
-	BackstageCatalog BackstageCatalogSpec `json:"backstageCatalog,omitempty"`
+	BackstageCatalog TenantBackstageCatalogSpec `json:"backstageCatalog,omitempty"`
+}
+
+type TenantGitlabSpec struct {
+	// Gitlab groups to associate.
+	// +optional
+	Groups []TenantGitlabGroup `json:"groups,omitempty"`
+}
+
+type TenantGitlabGroup struct {
+	// Name of the group.
+	// +required
+	Name string `json:"name"`
+}
+
+type TenantKubernetesSpec struct {
+	// Namespaces that will be owned by this Tenant.
+	// Owned namespaces will have special annotations set on them to mark the relationshop.
+	// +optional
+	Namespaces TenantKubernetesNamespace `json:"namespaces,omitempty"`
+}
+
+type TenantKubernetesNamespace struct {
+	// Name of the namespace.
+	// +required
+	Name string `json:"name"`
+
+	// Name of the cluster.
+	// +required
+	Cluster string `json:"cluster"`
+}
+
+type TenantBackstageCatalogSpec struct {
+	BackstageCatalogSpec `json:",inline"`
+
+	// Backstage System entities to create for this Tenant.
+	// +optional
+	Systems []BackstageCatalogSystem `json:"systems,omitempty"`
+}
+
+type BackstageCatalogSystem struct {
+	// Name of the System.
+	// +required
+	Name string `json:"name"`
+
+	// Metadata fields to set on the Backstage entity.
+	// +optional
+	Metadata BackstageCatalogSystemMetadata `json:"metadata,omitempty"`
+
+	// System spec.
+	// +required
+	Spec BackstageCatalogSystemSpec `json:"spec"`
+}
+
+type BackstageCatalogSystemSpec struct {
+	// Type of the System.
+	// +required
+	Type string `json:"type"`
+}
+
+// Subset of available metadata fields on Backstage entities.
+type BackstageCatalogSystemMetadata struct {
+	// Description for this System.
+	// +optional
+	Description string `json:"description,omitempty"`
+
+	// Name of this entity that will be displayed to viewers.
+	// +optional
+	Title string `json:"title,omitempty"`
+
+	// Links to include on the entity.
+	// +optional
+	Links []BackstageCatalogSystemLink `json:"links,omitempty"`
+}
+
+type BackstageCatalogSystemLink struct {
+	// A url in a standard uri format (e.g. https://example.com/some/page)
+	// +required
+	URL string `json:"url"`
+
+	// A user friendly display name for the link.
+	// +optional
+	Title string `json:"title,omitempty"`
+
+	// A key representing a visual icon to be displayed in the UI.
+	// +optional
+	Icon string `json:"icon,omitempty"`
+
+	// An optional value to categorize links into specific groups.
+	// +optional
+	Type string `json:"type,omitempty"`
 }
 
 type IdentityProviderConfiguration struct {
 	// Configuration for Okta integration.
 	// +optional
 	Okta *OktaConfiguration `json:"okta,omitempty"`
+
+	// Configuration for LDAP integration.
+	// +optional
+	LDAP *LDAPConfiguration `json:"ldap,omitempty"`
 }
 
 type OktaConfiguration struct {
+	// Groups to create.
+	// +required
+	Groups []IdentityGroup `json:"groups,omitempty"`
+}
+
+type LDAPConfiguration struct {
 	// Groups to create.
 	// +required
 	Groups []IdentityGroup `json:"groups,omitempty"`

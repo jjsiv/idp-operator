@@ -138,6 +138,62 @@ spec:
                     required:
                     - git
                     type: object
+                  systems:
+                    description: Backstage System entities to create for this Tenant.
+                    items:
+                      properties:
+                        metadata:
+                          description: Metadata fields to set on the Backstage entity.
+                          properties:
+                            description:
+                              description: Description for this System.
+                              type: string
+                            links:
+                              description: Links to include on the entity.
+                              items:
+                                properties:
+                                  icon:
+                                    description: A key representing a visual icon
+                                      to be displayed in the UI.
+                                    type: string
+                                  title:
+                                    description: A user friendly display name for
+                                      the link.
+                                    type: string
+                                  type:
+                                    description: An optional value to categorize links
+                                      into specific groups.
+                                    type: string
+                                  url:
+                                    description: A url in a standard uri format (e.g.
+                                      https://example.com/some/page)
+                                    type: string
+                                required:
+                                - url
+                                type: object
+                              type: array
+                            title:
+                              description: Name of this entity that will be displayed
+                                to viewers.
+                              type: string
+                          type: object
+                        name:
+                          description: Name of the System.
+                          type: string
+                        spec:
+                          description: System spec.
+                          properties:
+                            type:
+                              description: Type of the System.
+                              type: string
+                          required:
+                          - type
+                          type: object
+                      required:
+                      - name
+                      - spec
+                      type: object
+                    type: array
                 required:
                 - provisioning
                 type: object
@@ -147,10 +203,48 @@ spec:
               displayName:
                 description: Human readalbe name of the resource.
                 type: string
+              gitlab:
+                description: Gitlab infrastructure associated with this Tenant.
+                properties:
+                  groups:
+                    description: Gitlab groups to associate.
+                    items:
+                      properties:
+                        name:
+                          description: Name of the group.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                type: object
               identityProvider:
                 description: Configuring an identity provider allows for creating
                   of identity groups for members of this project.
                 properties:
+                  ldap:
+                    description: Configuration for LDAP integration.
+                    properties:
+                      groups:
+                        description: Groups to create.
+                        items:
+                          properties:
+                            name:
+                              description: Name of the group to create.
+                              type: string
+                            roles:
+                              description: Only members with the specified roles will
+                                be added to this group.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - name
+                          type: object
+                        type: array
+                    required:
+                    - groups
+                    type: object
                   okta:
                     description: Configuration for Okta integration.
                     properties:
@@ -173,6 +267,25 @@ spec:
                         type: array
                     required:
                     - groups
+                    type: object
+                type: object
+              kubernetes:
+                description: Kubernetes infrastructure associated with this Tenant.
+                properties:
+                  namespaces:
+                    description: |-
+                      Namespaces that will be owned by this Tenant.
+                      Owned namespaces will have special annotations set on them to mark the relationshop.
+                    properties:
+                      cluster:
+                        description: Name of the cluster.
+                        type: string
+                      name:
+                        description: Name of the namespace.
+                        type: string
+                    required:
+                    - cluster
+                    - name
                     type: object
                 type: object
               members:
